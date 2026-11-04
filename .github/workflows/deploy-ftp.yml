@@ -1,0 +1,133 @@
+name: Deploy Changed Files via FTPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wp-content/**'
+      - '.github/workflows/deploy-ftp.yml'
+  workflow_dispatch:
+    inputs:
+      sync_all:
+        description: 'Upload all tracked wp-content/ files instead of only commit diff'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ftp-deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Upload Pertinent Changed Files to Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Detect pertinent changed files & lint PHP
+        id: changes
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          SYNC_ALL: ${{ inputs.sync_all }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$SYNC_ALL" = "true" ]; then
+            git ls-files wp-content/themes/mlt-wp wp-content/plugins/mlt-wp-content > /tmp/changed_files.txt
+          elif [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git diff --name-only --diff-filter=ACMRT "$BEFORE_SHA" "$AFTER_SHA" -- wp-content/themes/mlt-wp wp-content/plugins/mlt-wp-content > /tmp/changed_files.txt
+          else
+            git diff-tree --no-commit-id --name-only -r --diff-filter=ACMRT "$AFTER_SHA" -- wp-content/themes/mlt-wp wp-content/plugins/mlt-wp-content > /tmp/changed_files.txt
+          fi
+
+          echo "Pertinent changed files:"
+          cat /tmp/changed_files.txt || true
+
+          # Lint any changed PHP files before uploading
+          while IFS= read -r file; do
+            if [ -n "$file" ] && [ -f "$file" ] && [[ "$file" == *.php ]]; then
+              php -l "$file"
+            fi
+          done < /tmp/changed_files.txt
+
+      - name: Upload changed files via FTPS (FileZilla configuration)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+        run: |
+          python3 - << 'EOF'
+          import ftplib
+          import os
+          import posixpath
+          import sys
+
+          with open("/tmp/changed_files.txt", "r", encoding="utf-8") as f:
+              files = [line.strip() for line in f if line.strip() and os.path.isfile(line.strip())]
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          if not files:
+              msg = "No pertinent `wp-content/` files changed in this push; skipping FTPS upload."
+              print(msg)
+              if summary_path:
+                  with open(summary_path, "a", encoding="utf-8") as sf:
+                      sf.write(f"### FTPS Deployment\n{msg}\n")
+              sys.exit(0)
+
+          host = os.environ["FTP_SERVER"]
+          user = os.environ["FTP_USERNAME"]
+          password = os.environ["FTP_PASSWORD"]
+          base_dir = os.environ["FTP_SERVER_DIR"].rstrip("/")
+
+          print(f"Connecting to {host}:21 via explicit FTPS...")
+          ftp = ftplib.FTP_TLS()
+          ftp.connect(host, 21, timeout=30)
+          ftp.login(user, password)
+          ftp.prot_p()
+
+          def ensure_remote_dir(remote_dir):
+              parts = [p for p in remote_dir.split("/") if p]
+              curr = ""
+              for part in parts:
+                  curr = f"{curr}/{part}"
+                  try:
+                      ftp.cwd(curr)
+                  except ftplib.error_perm:
+                      ftp.mkd(curr)
+                      ftp.cwd(curr)
+
+          uploaded = []
+          for rel_path in files:
+              remote_full = f"{base_dir}/{rel_path}"
+              remote_dir = posixpath.dirname(remote_full)
+              remote_filename = posixpath.basename(remote_full)
+
+              ensure_remote_dir(remote_dir)
+              size_bytes = os.path.getsize(rel_path)
+              with open(rel_path, "rb") as lf:
+                  ftp.storbinary(f"STOR {remote_filename}", lf)
+              print(f"Uploaded: {rel_path} -> {remote_full} ({size_bytes} bytes)")
+              uploaded.append((rel_path, remote_full, size_bytes))
+
+          ftp.quit()
+          print(f"Successfully uploaded {len(uploaded)} file(s).")
+
+          if summary_path:
+              with open(summary_path, "a", encoding="utf-8") as sf:
+                  sf.write("### FTPS Deployment Summary\n\n")
+                  sf.write("| Local Path | Remote Destination | Size (Bytes) |\n")
+                  sf.write("| :--- | :--- | ---: |\n")
+                  for rel_p, rem_p, sz in uploaded:
+                      sf.write(f"| `{rel_p}` | `{rem_p}` | {sz:,} |\n")
+          EOF
