@@ -119,6 +119,16 @@ function mlt_render_admin_setup_page(): void {
 		$notice = 'Sanity import result: ' . wp_json_encode( $res );
 	}
 
+	if ( isset( $_POST['mlt_save_public_writes'] ) && check_admin_referer( 'mlt_setup_action' ) ) {
+		$enabled = ! empty( $_POST['mlt_public_submissions_enabled'] ) ? '1' : '0';
+		update_option( 'mlt_public_submissions_enabled', $enabled );
+		$notice = '1' === $enabled
+			? 'Public form submissions (Contact, Event Registration, Newsletter Subscribe, Share Your Story) are now ENABLED.'
+			: 'Public form submissions are now DISABLED (endpoints return 503).';
+	}
+
+	$public_writes_enabled = mlt_are_public_writes_configured();
+
 	?>
 	<div class="wrap">
 		<h1>Men Let&apos;s Talk — Setup &amp; Sanity Migration</h1>
@@ -144,6 +154,21 @@ function mlt_render_admin_setup_page(): void {
 				<input type="password" id="sanity_read_token" name="sanity_read_token" class="regular-text" autocomplete="off" />
 			</p>
 			<p><button type="submit" name="mlt_run_sanity_import" class="button button-secondary">Run Sanity Import</button></p>
+		</form>
+
+		<hr />
+
+		<h2>3. Public Form Submissions &amp; Outbound SMTP</h2>
+		<p>Controls whether public write endpoints (<code>/api/contact</code>, <code>/api/register</code>, <code>/api/subscribe</code>, <code>/api/share-story</code>) accept live visitor submissions or return <code>503 Service Unavailable</code>.</p>
+		<form method="post">
+			<?php wp_nonce_field( 'mlt_setup_action' ); ?>
+			<p>
+				<label>
+					<input type="checkbox" name="mlt_public_submissions_enabled" value="1" <?php checked( $public_writes_enabled ); ?> />
+					<strong>Enable public visitor form submissions</strong>
+				</label>
+			</p>
+			<p><button type="submit" name="mlt_save_public_writes" class="button button-primary">Save Submission Settings</button></p>
 		</form>
 	</div>
 	<?php
