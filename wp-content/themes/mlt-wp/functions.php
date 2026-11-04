@@ -36,6 +36,88 @@ function mlt_wp_enqueue_assets(): void {
 add_action( 'wp_enqueue_scripts', 'mlt_wp_enqueue_assets' );
 
 /**
+ * Ensure WordPress always uses the Men Let's Talk emblem instead of the built-in
+ * WordPress "W" fallback icon (w-logo-gray-white-bg.png) in search results.
+ */
+function mlt_wp_default_site_icon_url( $url, $size, $blog_id ): string {
+	if ( empty( $url ) || false !== strpos( (string) $url, 'w-logo-' ) ) {
+		return get_template_directory_uri() . '/assets/images/icon.png';
+	}
+	return (string) $url;
+}
+add_filter( 'get_site_icon_url', 'mlt_wp_default_site_icon_url', 10, 3 );
+
+/**
+ * Serve the theme's favicon.ico directly on /favicon.ico requests when no custom
+ * DB site_icon is configured, avoiding WordPress's 302 redirect to w-logo-gray-white-bg.png.
+ */
+function mlt_wp_serve_favicon_ico(): void {
+	if ( (int) get_option( 'site_icon' ) > 0 ) {
+		return;
+	}
+	$ico_path = get_template_directory() . '/assets/images/favicon.ico';
+	if ( file_exists( $ico_path ) ) {
+		if ( ! headers_sent() ) {
+			status_header( 200 );
+			header( 'Content-Type: image/x-icon' );
+			header( 'Content-Length: ' . (string) filesize( $ico_path ) );
+			header( 'Cache-Control: public, max-age=86400' );
+		}
+		readfile( $ico_path );
+		exit;
+	}
+	wp_safe_redirect( get_template_directory_uri() . '/assets/images/icon.png', 302 );
+	exit;
+}
+add_action( 'do_faviconico', 'mlt_wp_serve_favicon_ico' );
+
+/**
+ * Output Organization + WebSite JSON-LD structured data and OpenGraph image tags
+ * so search engines associate the Men Let's Talk emblem with the domain.
+ */
+function mlt_wp_output_brand_schema_and_meta(): void {
+	$site_name = "Men Let's Talk";
+	$site_url  = home_url( '/' );
+	$icon_url  = get_template_directory_uri() . '/assets/images/icon.png';
+	$schema    = array(
+		'@context' => 'https://schema.org',
+		'@graph'   => array(
+			array(
+				'@type' => 'Organization',
+				'@id'   => $site_url . '#organization',
+				'name'  => $site_name,
+				'url'   => $site_url,
+				'logo'  => array(
+					'@type'      => 'ImageObject',
+					'@id'        => $site_url . '#logo',
+					'url'        => $icon_url,
+					'contentUrl' => $icon_url,
+					'width'      => 512,
+					'height'     => 512,
+					'caption'    => $site_name,
+				),
+				'image' => $icon_url,
+			),
+			array(
+				'@type'     => 'WebSite',
+				'@id'       => $site_url . '#website',
+				'url'       => $site_url,
+				'name'      => $site_name,
+				'publisher' => array(
+					'@id' => $site_url . '#organization',
+				),
+			),
+		),
+	);
+	?>
+	<meta property="og:site_name" content="<?php echo esc_attr( $site_name ); ?>" />
+	<meta property="og:image" content="<?php echo esc_url( $icon_url ); ?>" />
+	<script type="application/ld+json"><?php echo wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ); ?></script>
+	<?php
+}
+add_action( 'wp_head', 'mlt_wp_output_brand_schema_and_meta', 5 );
+
+/**
  * Helper to return theme static image URL.
  */
 function mlt_theme_image_url( string $filename ): string {

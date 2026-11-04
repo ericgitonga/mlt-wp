@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.1.2] - 2026-11-04
+- Replace WordPress fallback favicon (`w-logo-gray-white-bg.png`) with the Men Let's Talk organization emblem (`assets/images/icon.png` `512×512` and multi-size `assets/images/favicon.ico`), add `<link rel="icon">` / `<link rel="apple-touch-icon">` tags in `header.php`, filter `get_site_icon_url` + `do_faviconico`, and emit `Organization` + `WebSite` JSON-LD (`logo`, `image`) and `og:image` in `functions.php` (#2).
+
 ## [0.1.1] - 2026-11-04
 - Add Public Form Submissions toggle under **Tools > MLT Setup & Import** (`mlt_public_submissions_enabled`) and enable live visitor form submissions on `https://mlt.ericgitonga.com/`.
 
