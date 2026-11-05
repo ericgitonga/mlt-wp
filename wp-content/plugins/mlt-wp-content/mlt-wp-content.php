@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Men Let's Talk Content & Setup
  * Description: Custom post types, taxonomies, Sanity migration importer, 7-layer anti-spam engine, JSON API endpoints, and one-click page setup for Men Let's Talk.
- * Version:     0.2.1
+ * Version:     0.3.0
  * Author:      Men Let's Talk
  * Text Domain: mlt-wp-content
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLT_WP_CONTENT_VERSION', '0.2.1' );
+define( 'MLT_WP_CONTENT_VERSION', '0.3.0' );
 define( 'MLT_WP_CONTENT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MLT_WP_CONTENT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -445,7 +445,10 @@ function mlt_get_default_events(): array {
  */
 function mlt_get_default_gallery_images(): array {
 	$base_url = get_template_directory_uri() . '/assets/images/gallery/';
-	$nums     = array( '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '13' );
+	$nums     = array(
+		'01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '13',
+		'18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29',
+	);
 	$out      = array();
 	foreach ( $nums as $num ) {
 		$out[] = array(
@@ -709,25 +712,40 @@ function mlt_get_gallery_images(): array {
 		'gallery-image-16',
 		'gallery-image-17',
 	);
-	$images = array();
+	$seen_ids  = array();
+	$seen_urls = array();
+	$images    = array();
 	foreach ( $posts as $post ) {
 		$sanity_id = (string) get_post_meta( $post->ID, '_mlt_sanity_id', true );
 		if ( in_array( $sanity_id, $withdrawn, true ) ) {
 			continue;
 		}
-		$img_url   = get_the_post_thumbnail_url( $post->ID, 'large' ) ?: (string) get_post_meta( $post->ID, '_mlt_image_url', true );
+		$img_url = get_the_post_thumbnail_url( $post->ID, 'large' ) ?: (string) get_post_meta( $post->ID, '_mlt_image_url', true );
 		if ( ! $img_url ) {
 			continue;
 		}
-		$images[] = array(
-			'id'        => $sanity_id ? $sanity_id : 'gallery-' . $post->ID,
+		$id = $sanity_id ? $sanity_id : 'gallery-' . $post->ID;
+		if ( isset( $seen_ids[ $id ] ) || isset( $seen_urls[ $img_url ] ) ) {
+			continue;
+		}
+		$seen_ids[ $id ]       = true;
+		$seen_urls[ $img_url ] = true;
+		$images[]              = array(
+			'id'        => $id,
 			'image_url' => $img_url,
 			'caption'   => (string) get_post_meta( $post->ID, '_mlt_gallery_caption', true ),
 		);
 	}
 
-	if ( empty( $images ) ) {
-		return mlt_get_default_gallery_images();
+	foreach ( mlt_get_default_gallery_images() as $default_img ) {
+		$def_id  = $default_img['id'];
+		$def_url = $default_img['image_url'];
+		if ( isset( $seen_ids[ $def_id ] ) || isset( $seen_urls[ $def_url ] ) ) {
+			continue;
+		}
+		$seen_ids[ $def_id ]   = true;
+		$seen_urls[ $def_url ] = true;
+		$images[]              = $default_img;
 	}
 
 	return $images;
