@@ -80,11 +80,64 @@ function mlt_page_setup_run(): array {
 	update_option( 'permalink_structure', '/%postname%/' );
 	flush_rewrite_rules();
 
+	mlt_seed_default_media_content();
+
 	return array(
 		'created' => $created,
 		'updated' => $updated,
 		'home_id' => $home_id,
 	);
+}
+
+/**
+ * Idempotently seed the bundled upcoming event and 17 gallery photos into CPTs
+ * so they appear in wp-admin as well as on the frontend.
+ */
+function mlt_seed_default_media_content(): void {
+	if ( function_exists( 'mlt_get_default_events' ) && function_exists( 'mlt_find_post_by_sanity_id' ) ) {
+		foreach ( mlt_get_default_events() as $ev ) {
+			$post_id = mlt_find_post_by_sanity_id( 'mlt_event', $ev['id'] );
+			if ( 0 === $post_id ) {
+				$post_id = (int) wp_insert_post(
+					array(
+						'post_type'    => 'mlt_event',
+						'post_status'  => 'publish',
+						'post_title'   => $ev['name'],
+						'post_name'    => $ev['slug'],
+						'post_content' => $ev['description'],
+					)
+				);
+			}
+			if ( $post_id > 0 ) {
+				update_post_meta( $post_id, '_mlt_sanity_id', $ev['id'] );
+				update_post_meta( $post_id, '_mlt_event_date', $ev['date'] );
+				update_post_meta( $post_id, '_mlt_event_location', $ev['location'] );
+				update_post_meta( $post_id, '_mlt_event_category', $ev['category'] );
+				update_post_meta( $post_id, '_mlt_event_registration_open', $ev['registrationOpen'] ? '1' : '0' );
+				update_post_meta( $post_id, '_mlt_image_url', $ev['image_url'] );
+			}
+		}
+	}
+
+	if ( function_exists( 'mlt_get_default_gallery_images' ) && function_exists( 'mlt_find_post_by_sanity_id' ) ) {
+		foreach ( mlt_get_default_gallery_images() as $img ) {
+			$post_id = mlt_find_post_by_sanity_id( 'mlt_gallery_image', $img['id'] );
+			if ( 0 === $post_id ) {
+				$post_id = (int) wp_insert_post(
+					array(
+						'post_type'   => 'mlt_gallery_image',
+						'post_status' => 'publish',
+						'post_title'  => $img['caption'] ?: 'Gallery Photo',
+					)
+				);
+			}
+			if ( $post_id > 0 ) {
+				update_post_meta( $post_id, '_mlt_sanity_id', $img['id'] );
+				update_post_meta( $post_id, '_mlt_gallery_caption', $img['caption'] );
+				update_post_meta( $post_id, '_mlt_image_url', $img['image_url'] );
+			}
+		}
+	}
 }
 
 function mlt_register_admin_menus(): void {

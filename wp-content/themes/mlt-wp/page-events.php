@@ -34,9 +34,9 @@ get_header();
 						<img
 							src="<?php echo esc_url( $event['image_url'] ); ?>"
 							alt="<?php echo esc_attr( $event['name'] ); ?>"
-							width="800"
-							height="450"
-							class="mb-4 rounded-lg object-cover"
+							width="1200"
+							height="1600"
+							class="mb-4 h-auto w-full rounded-lg"
 						/>
 					<?php endif; ?>
 					<p class="text-sm font-medium uppercase tracking-wide text-neutral-500">

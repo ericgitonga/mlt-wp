@@ -36,18 +36,20 @@ get_header();
 			<?php foreach ( $images as $photo ) : ?>
 				<figure
 					data-testid="gallery-item"
-					class="relative aspect-square overflow-hidden rounded-lg bg-neutral-100"
+					class="group relative aspect-square overflow-hidden rounded-lg bg-neutral-100"
 				>
-					<img
-						src="<?php echo esc_url( $photo['image_url'] ); ?>"
-						alt="<?php echo esc_attr( ! empty( $photo['caption'] ) ? $photo['caption'] : "Photo from a Men Let's Talk event" ); ?>"
-						class="h-full w-full object-cover"
-					/>
-					<?php if ( ! empty( $photo['caption'] ) ) : ?>
-						<figcaption class="absolute inset-x-0 bottom-0 bg-neutral-900/60 px-2 py-1 text-xs text-white">
-							<?php echo esc_html( $photo['caption'] ); ?>
-						</figcaption>
-					<?php endif; ?>
+					<a
+						href="<?php echo esc_url( $photo['image_url'] ); ?>"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="block h-full w-full"
+					>
+						<img
+							src="<?php echo esc_url( $photo['image_url'] ); ?>"
+							alt="<?php echo esc_attr( ! empty( $photo['caption'] ) ? $photo['caption'] : "Photo from a Men Let's Talk event" ); ?>"
+							class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+						/>
+					</a>
 				</figure>
 			<?php endforeach; ?>
 		</div>

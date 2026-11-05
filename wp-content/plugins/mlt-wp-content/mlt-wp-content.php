@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Men Let's Talk Content & Setup
  * Description: Custom post types, taxonomies, Sanity migration importer, 7-layer anti-spam engine, JSON API endpoints, and one-click page setup for Men Let's Talk.
- * Version:     0.1.1
+ * Version:     0.2.0
  * Author:      Men Let's Talk
  * Text Domain: mlt-wp-content
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLT_WP_CONTENT_VERSION', '0.1.1' );
+define( 'MLT_WP_CONTENT_VERSION', '0.2.0' );
 define( 'MLT_WP_CONTENT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MLT_WP_CONTENT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -408,6 +408,56 @@ function mlt_get_site_settings(): array {
 }
 
 /**
+ * Default bundled events (mirrors src/lib/defaultMedia.ts in men-lets-talk).
+ */
+function mlt_get_default_events(): array {
+	$events_base = get_template_directory_uri() . '/assets/images/events/';
+	return array(
+		array(
+			'id'               => 'event-mens-garage-2026-11-08',
+			'wp_id'            => 0,
+			'name'             => "Men's Garage: What's Under the Hood?",
+			'slug'             => 'mens-garage-whats-under-the-hood',
+			'date'             => '2026-11-08T10:00:00.000Z',
+			'location'         => 'Junction Mall',
+			'category'         => 'special-forums',
+			'description'      => "The Junction (All About Men) x Men Let's Talk x JimmiGathu Connects presents Men's Garage: What's Under the Hood? Real conversations. Beyond the surface. Tickets KES 1,000 (KES 500 redeemable). Men-only space till 6 PM; free arcade games, F&B offers & Man Utd vs Aston Villa at 19:30.",
+			'image_url'        => $events_base . 'mens-garage-flier.jpg',
+			'registrationOpen' => true,
+		),
+		array(
+			'id'               => 'event-son-and-father-dinner-2026-12-12',
+			'wp_id'            => 0,
+			'name'             => 'Son & Father Dinner',
+			'slug'             => 'son-and-father-dinner',
+			'date'             => '2026-12-12T15:00:00.000Z',
+			'location'         => 'Heri Heights Hotel, Kolobot Drive',
+			'category'         => 'father-son',
+			'description'      => '"Sons take your fathers out for dinner." An intentional evening of conversation, connection and honour for fathers and sons at Heri Heights Hotel, Kolobot Drive. KES 2,500 per person — limited slots.',
+			'image_url'        => $events_base . 'son-and-father-dinner-flier.jpg',
+			'registrationOpen' => true,
+		),
+	);
+}
+
+/**
+ * Default bundled gallery photos (mirrors src/lib/defaultMedia.ts in men-lets-talk).
+ */
+function mlt_get_default_gallery_images(): array {
+	$base_url = get_template_directory_uri() . '/assets/images/gallery/';
+	$out      = array();
+	for ( $i = 1; $i <= 17; $i++ ) {
+		$num   = str_pad( (string) $i, 2, '0', STR_PAD_LEFT );
+		$out[] = array(
+			'id'        => 'gallery-image-' . $num,
+			'image_url' => $base_url . 'gallery-' . $num . '.jpg',
+			'caption'   => '',
+		);
+	}
+	return $out;
+}
+
+/**
  * Query upcoming events (date >= now, ordered soonest first).
  */
 function mlt_get_upcoming_events( int $limit = -1 ): array {
@@ -432,6 +482,7 @@ function mlt_get_upcoming_events( int $limit = -1 ): array {
 			continue;
 		}
 		$sanity_id = (string) get_post_meta( $post->ID, '_mlt_sanity_id', true );
+		$img_url   = get_the_post_thumbnail_url( $post->ID, 'full' ) ?: (string) get_post_meta( $post->ID, '_mlt_image_url', true );
 		$events[]  = array(
 			'id'               => $sanity_id ? $sanity_id : 'event-' . $post->ID,
 			'wp_id'            => $post->ID,
@@ -441,9 +492,18 @@ function mlt_get_upcoming_events( int $limit = -1 ): array {
 			'location'         => (string) get_post_meta( $post->ID, '_mlt_event_location', true ),
 			'category'         => (string) get_post_meta( $post->ID, '_mlt_event_category', true ),
 			'description'      => wp_strip_all_tags( $post->post_content ),
-			'image_url'        => get_the_post_thumbnail_url( $post->ID, 'large' ) ?: '',
+			'image_url'        => $img_url,
 			'registrationOpen' => (bool) get_post_meta( $post->ID, '_mlt_event_registration_open', true ),
 		);
+	}
+
+	if ( empty( $events ) ) {
+		foreach ( mlt_get_default_events() as $def_ev ) {
+			$def_ts = strtotime( $def_ev['date'] );
+			if ( false === $def_ts || $def_ts >= $now_ts ) {
+				$events[] = $def_ev;
+			}
+		}
 	}
 
 	if ( $limit > 0 ) {
@@ -654,6 +714,10 @@ function mlt_get_gallery_images(): array {
 			'image_url' => $img_url,
 			'caption'   => (string) get_post_meta( $post->ID, '_mlt_gallery_caption', true ),
 		);
+	}
+
+	if ( empty( $images ) ) {
+		return mlt_get_default_gallery_images();
 	}
 
 	return $images;
