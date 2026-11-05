@@ -120,6 +120,12 @@ function mlt_seed_default_media_content(): void {
 	}
 
 	if ( function_exists( 'mlt_get_default_gallery_images' ) && function_exists( 'mlt_find_post_by_sanity_id' ) ) {
+		foreach ( array( 'gallery-image-12', 'gallery-image-14', 'gallery-image-15', 'gallery-image-16', 'gallery-image-17' ) as $removed_id ) {
+			$old_post_id = mlt_find_post_by_sanity_id( 'mlt_gallery_image', $removed_id );
+			if ( $old_post_id > 0 ) {
+				wp_delete_post( $old_post_id, true );
+			}
+		}
 		foreach ( mlt_get_default_gallery_images() as $img ) {
 			$post_id = mlt_find_post_by_sanity_id( 'mlt_gallery_image', $img['id'] );
 			if ( 0 === $post_id ) {
