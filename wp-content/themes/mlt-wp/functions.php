@@ -23,13 +23,13 @@ function mlt_wp_enqueue_assets(): void {
 		'mlt-wp-main',
 		$theme_uri . '/assets/css/main.css',
 		array(),
-		'0.3.0'
+		'0.3.1'
 	);
 	wp_enqueue_script(
 		'mlt-wp-main',
 		$theme_uri . '/assets/js/main.js',
 		array(),
-		'0.3.0',
+		'0.3.1',
 		true
 	);
 }

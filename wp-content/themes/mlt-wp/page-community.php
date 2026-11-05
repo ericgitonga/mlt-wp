@@ -29,8 +29,9 @@ get_header();
 	<section data-testid="community-video-section" class="mt-10">
 		<h2 class="text-2xl font-bold">The Conversation Is Growing</h2>
 		<p class="mt-2 text-neutral-600">
-			Every Tuesday, men gather across Nairobi, Nakuru, Kampala and beyond to share honestly,
-			connect and walk alongside one another.
+			Different chapters meet on different days of the week — Nakuru gathers on Tuesdays,
+			Nairobi gathers on Thursdays, and new circles are growing across Kampala and beyond so
+			men can share honestly, connect and walk alongside one another.
 		</p>
 		<div class="mx-auto mt-4 max-w-md overflow-hidden rounded-lg bg-neutral-900">
 			<video

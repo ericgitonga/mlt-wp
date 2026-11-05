@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.3.1] - 2026-11-05
+- Update the *"The Conversation Is Growing"* copy on `/community` (`page-community.php`) to reflect that different chapters meet on different days — Nakuru on Tuesdays and Nairobi on Thursdays — alongside growing circles in Kampala and beyond (closes #10).
+
 ## [0.3.0] - 2026-11-05
 - Add 12 new Men Let's Talk conversation-circle photographs (`gallery-18.jpg` through `gallery-29.jpg`, IDs `gallery-image-18` through `gallery-image-29`) to `assets/images/gallery/` and `mlt_get_default_gallery_images()`, bringing `/gallery` to 24 unique photographs with automatic deduplication by ID and URL in `mlt_get_gallery_images()` (closes #8).
 - Add the web-optimised chapter-growth video `assets/media/odek-the-conversation-is-growing.mp4` (*"The Conversation Is Growing — Nairobi • Nakuru • Kampala"*) in a dedicated `data-testid="community-video-section"` section on `/community` (`page-community.php`) and alongside the overview video in *"Inside Men Let's Talk"* on `/about` (`page-about.php`) (closes #8).
