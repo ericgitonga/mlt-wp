@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Men Let's Talk Content & Setup
  * Description: Custom post types, taxonomies, Sanity migration importer, 7-layer anti-spam engine, JSON API endpoints, and one-click page setup for Men Let's Talk.
- * Version:     0.2.0
+ * Version:     0.2.1
  * Author:      Men Let's Talk
  * Text Domain: mlt-wp-content
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLT_WP_CONTENT_VERSION', '0.2.0' );
+define( 'MLT_WP_CONTENT_VERSION', '0.2.1' );
 define( 'MLT_WP_CONTENT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MLT_WP_CONTENT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -445,9 +445,9 @@ function mlt_get_default_events(): array {
  */
 function mlt_get_default_gallery_images(): array {
 	$base_url = get_template_directory_uri() . '/assets/images/gallery/';
+	$nums     = array( '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '13' );
 	$out      = array();
-	for ( $i = 1; $i <= 17; $i++ ) {
-		$num   = str_pad( (string) $i, 2, '0', STR_PAD_LEFT );
+	foreach ( $nums as $num ) {
 		$out[] = array(
 			'id'        => 'gallery-image-' . $num,
 			'image_url' => $base_url . 'gallery-' . $num . '.jpg',
@@ -702,9 +702,19 @@ function mlt_get_gallery_images(): array {
 		)
 	);
 
+	$withdrawn = array(
+		'gallery-image-12',
+		'gallery-image-14',
+		'gallery-image-15',
+		'gallery-image-16',
+		'gallery-image-17',
+	);
 	$images = array();
 	foreach ( $posts as $post ) {
 		$sanity_id = (string) get_post_meta( $post->ID, '_mlt_sanity_id', true );
+		if ( in_array( $sanity_id, $withdrawn, true ) ) {
+			continue;
+		}
 		$img_url   = get_the_post_thumbnail_url( $post->ID, 'large' ) ?: (string) get_post_meta( $post->ID, '_mlt_image_url', true );
 		if ( ! $img_url ) {
 			continue;

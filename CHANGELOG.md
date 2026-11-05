@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.2.1] - 2026-11-05
+- Remove the 5 biker/motorcycle photographs (`gallery-image-12`, `gallery-image-14`, `gallery-image-15`, `gallery-image-16`, `gallery-image-17`) from the gallery list and purge any seeded CPT records for those IDs per client feedback, retaining the 12 Men Let's Talk conversation-circle photographs on `/gallery` (closes #6).
+
 ## [0.2.0] - 2026-11-05
 - Add upcoming events *Men's Garage: What's Under the Hood?* (`2026-11-08` at Junction Mall, `assets/images/events/mens-garage-flier.jpg`) and *Son & Father Dinner* (`2026-12-12` at Heri Heights Hotel, Kolobot Drive, `assets/images/events/son-and-father-dinner-flier.jpg`) with full-frame portrait flier rendering on `/events` and the homepage Upcoming Events section, 17 event and biker brotherhood gallery photographs (`assets/images/gallery/gallery-01.jpg` … `gallery-17.jpg`) without caption overlays on `/gallery`, and the "Inside Men Let's Talk" video section (`assets/media/about-men-lets-talk.mp4`) on `/about` (closes #4).
 
