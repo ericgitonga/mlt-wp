@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.0] - 2026-11-05
+- Add 12 new Men Let's Talk conversation-circle photographs (`gallery-18.jpg` through `gallery-29.jpg`, IDs `gallery-image-18` through `gallery-image-29`) to `assets/images/gallery/` and `mlt_get_default_gallery_images()`, bringing `/gallery` to 24 unique photographs with automatic deduplication by ID and URL in `mlt_get_gallery_images()` (closes #8).
+- Add the web-optimised chapter-growth video `assets/media/odek-the-conversation-is-growing.mp4` (*"The Conversation Is Growing — Nairobi • Nakuru • Kampala"*) in a dedicated `data-testid="community-video-section"` section on `/community` (`page-community.php`) and alongside the overview video in *"Inside Men Let's Talk"* on `/about` (`page-about.php`) (closes #8).
+
 ## [0.2.1] - 2026-11-05
 - Remove the 5 biker/motorcycle photographs (`gallery-image-12`, `gallery-image-14`, `gallery-image-15`, `gallery-image-16`, `gallery-image-17`) from the gallery list and purge any seeded CPT records for those IDs per client feedback, retaining the 12 Men Let's Talk conversation-circle photographs on `/gallery` (closes #6).
 

@@ -49,18 +49,31 @@ get_header();
 		<h2 class="text-2xl font-bold">Inside Men Let&apos;s Talk</h2>
 		<p class="mt-2 text-neutral-600">
 			See how men gather, listen and walk alongside one another in our conversations and
-			community spaces.
+			community spaces across Nairobi, Nakuru, Kampala and beyond.
 		</p>
-		<div class="mt-4 overflow-hidden rounded-lg bg-neutral-900">
-			<video
-				data-testid="about-video"
-				controls
-				preload="metadata"
-				class="aspect-video w-full"
-			>
-				<source src="<?php echo esc_url( get_template_directory_uri() . '/assets/media/about-men-lets-talk.mp4' ); ?>" type="video/mp4" />
-				Your browser does not support the video tag.
-			</video>
+		<div class="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2">
+			<div class="overflow-hidden rounded-lg bg-neutral-900">
+				<video
+					data-testid="about-video"
+					controls
+					preload="metadata"
+					class="aspect-video w-full"
+				>
+					<source src="<?php echo esc_url( get_template_directory_uri() . '/assets/media/about-men-lets-talk.mp4' ); ?>" type="video/mp4" />
+					Your browser does not support the video tag.
+				</video>
+			</div>
+			<div class="overflow-hidden rounded-lg bg-neutral-900">
+				<video
+					data-testid="about-odek-video"
+					controls
+					preload="metadata"
+					class="h-auto w-full"
+				>
+					<source src="<?php echo esc_url( get_template_directory_uri() . '/assets/media/odek-the-conversation-is-growing.mp4' ); ?>" type="video/mp4" />
+					Your browser does not support the video tag.
+				</video>
+			</div>
 		</div>
 	</section>
 

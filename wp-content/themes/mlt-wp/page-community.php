@@ -26,6 +26,25 @@ get_header();
 		through life&apos;s different seasons.
 	</p>
 
+	<section data-testid="community-video-section" class="mt-10">
+		<h2 class="text-2xl font-bold">The Conversation Is Growing</h2>
+		<p class="mt-2 text-neutral-600">
+			Every Tuesday, men gather across Nairobi, Nakuru, Kampala and beyond to share honestly,
+			connect and walk alongside one another.
+		</p>
+		<div class="mx-auto mt-4 max-w-md overflow-hidden rounded-lg bg-neutral-900">
+			<video
+				data-testid="community-video"
+				controls
+				preload="metadata"
+				class="h-auto w-full"
+			>
+				<source src="<?php echo esc_url( get_template_directory_uri() . '/assets/media/odek-the-conversation-is-growing.mp4' ); ?>" type="video/mp4" />
+				Your browser does not support the video tag.
+			</video>
+		</div>
+	</section>
+
 	<?php if ( empty( $groups ) ) : ?>
 		<p data-testid="community-empty-state" class="mt-8 text-neutral-600">
 			No community groups listed here yet — check back soon.
