@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.2.0] - 2026-11-05
+- Add upcoming events *Men's Garage: What's Under the Hood?* (`2026-11-08` at Junction Mall, `assets/images/events/mens-garage-flier.jpg`) and *Son & Father Dinner* (`2026-12-12` at Heri Heights Hotel, Kolobot Drive, `assets/images/events/son-and-father-dinner-flier.jpg`) with full-frame portrait flier rendering on `/events` and the homepage Upcoming Events section, 17 event and biker brotherhood gallery photographs (`assets/images/gallery/gallery-01.jpg` … `gallery-17.jpg`) without caption overlays on `/gallery`, and the "Inside Men Let's Talk" video section (`assets/media/about-men-lets-talk.mp4`) on `/about` (closes #4).
+
 ## [0.1.2] - 2026-11-04
 - Replace WordPress fallback favicon (`w-logo-gray-white-bg.png`) with the Men Let's Talk organization emblem (`assets/images/icon.png` `512×512` and multi-size `assets/images/favicon.ico`), add `<link rel="icon">` / `<link rel="apple-touch-icon">` tags in `header.php`, filter `get_site_icon_url` + `do_faviconico`, and emit `Organization` + `WebSite` JSON-LD (`logo`, `image`) and `og:image` in `functions.php` (#2).
 

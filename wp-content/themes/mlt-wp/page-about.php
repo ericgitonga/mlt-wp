@@ -45,6 +45,25 @@ get_header();
 		</p>
 	</section>
 
+	<section data-testid="about-video-section" class="mt-10">
+		<h2 class="text-2xl font-bold">Inside Men Let&apos;s Talk</h2>
+		<p class="mt-2 text-neutral-600">
+			See how men gather, listen and walk alongside one another in our conversations and
+			community spaces.
+		</p>
+		<div class="mt-4 overflow-hidden rounded-lg bg-neutral-900">
+			<video
+				data-testid="about-video"
+				controls
+				preload="metadata"
+				class="aspect-video w-full"
+			>
+				<source src="<?php echo esc_url( get_template_directory_uri() . '/assets/media/about-men-lets-talk.mp4' ); ?>" type="video/mp4" />
+				Your browser does not support the video tag.
+			</video>
+		</div>
+	</section>
+
 	<section data-testid="our-why-section" class="mt-10">
 		<h2 class="text-2xl font-bold">Our Why</h2>
 		<p class="mt-3 text-neutral-700">
