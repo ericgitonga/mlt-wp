@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.4.1] - 2026-11-06
+- Add `mlt_ensure_production_db_defaults()` in `includes/page-setup.php` to update the raw `wp_options` (`siteurl` and `home`) and any stored `wp_postmeta` / `wp_posts` URLs to `https://www.menletstalk.co.ke`, and ensure `mlt_ensure_dynamic_host_wp_config()` updates existing fallback host strings to `www.menletstalk.co.ke` (closes #16).
+
 ## [0.4.0] - 2026-11-06
 - Cut over the full WordPress + `mlt-wp` installation from `ericgitonga.com/mlt/html` to the main domain docroot `menletstalk.co.ke/www/html` on Angry Hosting with dynamic `WP_HOME` / `WP_SITEURL` host detection (`www.menletstalk.co.ke`, `menletstalk.co.ke`, and `mlt.ericgitonga.com`), normalize stored `_mlt_image_url` theme asset paths across domain cutovers, and update `.github/workflows/deploy-ftp.yml` to deploy `wp-content/` changes to both docroots (closes #14).
 
