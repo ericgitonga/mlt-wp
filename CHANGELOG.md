@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.3.2] - 2026-11-06
+- Remove the vertical-format video (`odek-the-conversation-is-growing.mp4`) from `/about` (`page-about.php`) so the landscape overview video (`about-men-lets-talk.mp4`) renders at full 16:9 width, keeping the vertical video exclusively on `/community` (`page-community.php`) (closes #12).
+
 ## [0.3.1] - 2026-11-05
 - Update the *"The Conversation Is Growing"* copy on `/community` (`page-community.php`) to reflect that different chapters meet on different days — Nakuru on Tuesdays and Nairobi on Thursdays — alongside growing circles in Kampala and beyond (closes #10).
 
