@@ -146,6 +146,102 @@ function mlt_seed_default_media_content(): void {
 	}
 }
 
+/**
+ * Recursively copy directory contents from $src to $dst.
+ */
+function mlt_recursive_copy_dir( string $src, string $dst ): int {
+	$count = 0;
+	if ( ! is_dir( $src ) ) {
+		return 0;
+	}
+	if ( ! is_dir( $dst ) && ! @mkdir( $dst, 0755, true ) ) {
+		return 0;
+	}
+	$items = @scandir( $src );
+	if ( ! is_array( $items ) ) {
+		return 0;
+	}
+	foreach ( $items as $item ) {
+		if ( '.' === $item || '..' === $item || 'local-preview' === $item || '.wp-runtime' === $item ) {
+			continue;
+		}
+		$src_path = $src . '/' . $item;
+		$dst_path = $dst . '/' . $item;
+		if ( is_dir( $src_path ) ) {
+			$count += mlt_recursive_copy_dir( $src_path, $dst_path );
+		} elseif ( is_file( $src_path ) ) {
+			if ( @copy( $src_path, $dst_path ) ) {
+				$count++;
+			}
+		}
+	}
+	return $count;
+}
+
+/**
+ * Ensure wp-config.php in $docroot has dynamic multi-host WP_HOME / WP_SITEURL support
+ * for www.menletstalk.co.ke, menletstalk.co.ke, and mlt.ericgitonga.com.
+ */
+function mlt_ensure_dynamic_host_wp_config( string $wp_config_path, string $default_host = 'www.menletstalk.co.ke' ): void {
+	if ( ! is_file( $wp_config_path ) || ! is_readable( $wp_config_path ) || ! is_writable( $wp_config_path ) ) {
+		return;
+	}
+	$contents = (string) file_get_contents( $wp_config_path );
+	if ( false !== strpos( $contents, 'MLT_DYNAMIC_HOST_CONFIG' ) ) {
+		return;
+	}
+	$snippet  = "\n// MLT_DYNAMIC_HOST_CONFIG: support menletstalk.co.ke and mlt.ericgitonga.com seamlessly.\n";
+	$snippet .= "\$mlt_allowed_hosts = array( 'www.menletstalk.co.ke', 'menletstalk.co.ke', 'mlt.ericgitonga.com' );\n";
+	$snippet .= "\$mlt_req_host      = isset( \$_SERVER['HTTP_HOST'] ) ? strtolower( preg_replace( '/:\\d+\$/', '', (string) \$_SERVER['HTTP_HOST'] ) ) : '';\n";
+	$snippet .= "\$mlt_active_host   = in_array( \$mlt_req_host, \$mlt_allowed_hosts, true ) ? \$mlt_req_host : '" . addslashes( $default_host ) . "';\n";
+	$snippet .= "if ( ! defined( 'WP_HOME' ) ) {\n\tdefine( 'WP_HOME', 'https://' . \$mlt_active_host );\n}\n";
+	$snippet .= "if ( ! defined( 'WP_SITEURL' ) ) {\n\tdefine( 'WP_SITEURL', 'https://' . \$mlt_active_host );\n}\n\n";
+
+	$target = "if ( ! defined( 'ABSPATH' ) )";
+	if ( false !== strpos( $contents, $target ) ) {
+		$updated = str_replace( $target, $snippet . $target, $contents );
+		@file_put_contents( $wp_config_path, $updated );
+	}
+}
+
+/**
+ * Sync the complete WordPress + mlt-wp installation from ericgitonga.com/mlt/html
+ * into sibling menletstalk.co.ke/www/html on Angry Hosting if present.
+ */
+function mlt_sync_production_docroot(): array {
+	$src_root     = rtrim( ABSPATH, '/\\' );
+	$account_root = dirname( $src_root, 3 );
+	$prod_docroot = $account_root . '/menletstalk.co.ke/www/html';
+
+	mlt_ensure_dynamic_host_wp_config( $src_root . '/wp-config.php', 'mlt.ericgitonga.com' );
+
+	if ( ! is_dir( $prod_docroot ) || realpath( $prod_docroot ) === realpath( $src_root ) ) {
+		return array(
+			'synced' => false,
+			'files'  => 0,
+			'target' => $prod_docroot,
+		);
+	}
+
+	$copied = mlt_recursive_copy_dir( $src_root, $prod_docroot );
+	mlt_ensure_dynamic_host_wp_config( $prod_docroot . '/wp-config.php', 'www.menletstalk.co.ke' );
+	update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION );
+
+	return array(
+		'synced' => true,
+		'files'  => $copied,
+		'target' => $prod_docroot,
+	);
+}
+
+function mlt_maybe_auto_sync_production_docroot(): void {
+	if ( get_option( 'mlt_prod_docroot_synced' ) === MLT_WP_CONTENT_VERSION ) {
+		return;
+	}
+	mlt_sync_production_docroot();
+}
+add_action( 'init', 'mlt_maybe_auto_sync_production_docroot', 20 );
+
 function mlt_register_admin_menus(): void {
 	add_management_page(
 		'MLT Page Setup & Sanity Import',
