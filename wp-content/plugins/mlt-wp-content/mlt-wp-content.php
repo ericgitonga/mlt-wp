@@ -399,7 +399,7 @@ function mlt_get_site_settings(): array {
 		'heroTitle'             => ! empty( $saved['heroTitle'] ) ? (string) $saved['heroTitle'] : $defaults['heroTitle'],
 		'heroSupportingMessage' => ! empty( $saved['heroSupportingMessage'] ) ? (string) $saved['heroSupportingMessage'] : $defaults['heroSupportingMessage'],
 		'heroDescription'       => ! empty( $saved['heroDescription'] ) ? (string) $saved['heroDescription'] : $defaults['heroDescription'],
-		'heroImageUrl'          => ! empty( $saved['heroImageUrl'] ) ? (string) $saved['heroImageUrl'] : $defaults['heroImageUrl'],
+		'heroImageUrl'          => ! empty( $saved['heroImageUrl'] ) ? mlt_normalize_theme_asset_url( (string) $saved['heroImageUrl'] ) : $defaults['heroImageUrl'],
 		'pillars'               => ! empty( $saved['pillars'] ) && is_array( $saved['pillars'] ) ? $saved['pillars'] : $defaults['pillars'],
 		'featuredTopics'        => ! empty( $saved['featuredTopics'] ) && is_array( $saved['featuredTopics'] ) ? $saved['featuredTopics'] : $defaults['featuredTopics'],
 		'communityFeatures'     => ! empty( $saved['communityFeatures'] ) && is_array( $saved['communityFeatures'] ) ? $saved['communityFeatures'] : $defaults['communityFeatures'],
@@ -408,17 +408,24 @@ function mlt_get_site_settings(): array {
 }
 
 /**
- * Normalize theme-bundled asset URLs across domain cutovers (e.g. mlt.ericgitonga.com -> www.menletstalk.co.ke).
+ * Normalize theme-bundled and wp-content/uploads asset URLs across domain cutovers
+ * (e.g. mlt.ericgitonga.com -> www.menletstalk.co.ke).
  */
 function mlt_normalize_theme_asset_url( string $url ): string {
 	if ( '' === $url ) {
 		return '';
 	}
-	$marker = '/wp-content/themes/mlt-wp/';
-	$pos    = strpos( $url, $marker );
-	if ( false !== $pos ) {
-		$rel = substr( $url, $pos + strlen( $marker ) );
+	$theme_marker = '/wp-content/themes/mlt-wp/';
+	$theme_pos    = strpos( $url, $theme_marker );
+	if ( false !== $theme_pos ) {
+		$rel = substr( $url, $theme_pos + strlen( $theme_marker ) );
 		return rtrim( get_template_directory_uri(), '/' ) . '/' . ltrim( $rel, '/' );
+	}
+	$uploads_marker = '/wp-content/uploads/';
+	$uploads_pos    = strpos( $url, $uploads_marker );
+	if ( false !== $uploads_pos ) {
+		$rel = substr( $url, $uploads_pos + strlen( $uploads_marker ) );
+		return rtrim( content_url( 'uploads' ), '/' ) . '/' . ltrim( $rel, '/' );
 	}
 	return $url;
 }

@@ -233,6 +233,15 @@ function mlt_ensure_production_db_defaults( string $canonical_origin = 'https://
 		array( 'option_name' => 'home' )
 	);
 
+	$saved_settings = get_option( 'mlt_site_settings', array() );
+	if ( is_array( $saved_settings ) && ! empty( $saved_settings['heroImageUrl'] ) && is_string( $saved_settings['heroImageUrl'] ) ) {
+		$updated_hero = str_replace( $staging_origin, $canonical_origin, $saved_settings['heroImageUrl'] );
+		if ( $updated_hero !== $saved_settings['heroImageUrl'] ) {
+			$saved_settings['heroImageUrl'] = $updated_hero;
+			update_option( 'mlt_site_settings', $saved_settings );
+		}
+	}
+
 	$meta_updated = (int) $wpdb->query(
 		$wpdb->prepare(
 			"UPDATE {$wpdb->postmeta} SET meta_value = REPLACE(meta_value, %s, %s) WHERE meta_value LIKE %s",
@@ -280,7 +289,7 @@ function mlt_sync_production_docroot(): array {
 	$db_defaults = mlt_ensure_production_db_defaults( 'https://www.menletstalk.co.ke' );
 
 	if ( ! is_dir( $prod_docroot ) || realpath( $prod_docroot ) === realpath( $src_root ) ) {
-		update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION );
+		update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION . '-r2' );
 		return array(
 			'synced'      => false,
 			'files'       => 0,
@@ -291,7 +300,7 @@ function mlt_sync_production_docroot(): array {
 
 	$copied = is_file( $prod_docroot . '/wp-config.php' ) ? 0 : mlt_recursive_copy_dir( $src_root, $prod_docroot );
 	mlt_ensure_dynamic_host_wp_config( $prod_docroot . '/wp-config.php', 'www.menletstalk.co.ke' );
-	update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION );
+	update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION . '-r2' );
 
 	return array(
 		'synced'      => true,
@@ -302,7 +311,7 @@ function mlt_sync_production_docroot(): array {
 }
 
 function mlt_maybe_auto_sync_production_docroot(): void {
-	if ( get_option( 'mlt_prod_docroot_synced' ) === MLT_WP_CONTENT_VERSION ) {
+	if ( get_option( 'mlt_prod_docroot_synced' ) === MLT_WP_CONTENT_VERSION . '-r2' ) {
 		return;
 	}
 	mlt_sync_production_docroot();
