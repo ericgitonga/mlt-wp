@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.4.0] - 2026-11-06
+- Cut over the full WordPress + `mlt-wp` installation from `ericgitonga.com/mlt/html` to the main domain docroot `menletstalk.co.ke/www/html` on Angry Hosting with dynamic `WP_HOME` / `WP_SITEURL` host detection (`www.menletstalk.co.ke`, `menletstalk.co.ke`, and `mlt.ericgitonga.com`), normalize stored `_mlt_image_url` theme asset paths across domain cutovers, and update `.github/workflows/deploy-ftp.yml` to deploy `wp-content/` changes to both docroots (closes #14).
+
 ## [0.3.2] - 2026-11-06
 - Remove the vertical-format video (`odek-the-conversation-is-growing.mp4`) from `/about` (`page-about.php`) so the landscape overview video (`about-men-lets-talk.mp4`) renders at full 16:9 width, keeping the vertical video exclusively on `/community` (`page-community.php`) (closes #12).
 

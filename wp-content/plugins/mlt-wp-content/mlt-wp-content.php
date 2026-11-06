@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Men Let's Talk Content & Setup
  * Description: Custom post types, taxonomies, Sanity migration importer, 7-layer anti-spam engine, JSON API endpoints, and one-click page setup for Men Let's Talk.
- * Version:     0.3.2
+ * Version:     0.4.0
  * Author:      Men Let's Talk
  * Text Domain: mlt-wp-content
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLT_WP_CONTENT_VERSION', '0.3.2' );
+define( 'MLT_WP_CONTENT_VERSION', '0.4.0' );
 define( 'MLT_WP_CONTENT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MLT_WP_CONTENT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -408,6 +408,22 @@ function mlt_get_site_settings(): array {
 }
 
 /**
+ * Normalize theme-bundled asset URLs across domain cutovers (e.g. mlt.ericgitonga.com -> www.menletstalk.co.ke).
+ */
+function mlt_normalize_theme_asset_url( string $url ): string {
+	if ( '' === $url ) {
+		return '';
+	}
+	$marker = '/wp-content/themes/mlt-wp/';
+	$pos    = strpos( $url, $marker );
+	if ( false !== $pos ) {
+		$rel = substr( $url, $pos + strlen( $marker ) );
+		return rtrim( get_template_directory_uri(), '/' ) . '/' . ltrim( $rel, '/' );
+	}
+	return $url;
+}
+
+/**
  * Default bundled events (mirrors src/lib/defaultMedia.ts in men-lets-talk).
  */
 function mlt_get_default_events(): array {
@@ -486,6 +502,7 @@ function mlt_get_upcoming_events( int $limit = -1 ): array {
 		}
 		$sanity_id = (string) get_post_meta( $post->ID, '_mlt_sanity_id', true );
 		$img_url   = get_the_post_thumbnail_url( $post->ID, 'full' ) ?: (string) get_post_meta( $post->ID, '_mlt_image_url', true );
+		$img_url   = mlt_normalize_theme_asset_url( $img_url );
 		$events[]  = array(
 			'id'               => $sanity_id ? $sanity_id : 'event-' . $post->ID,
 			'wp_id'            => $post->ID,
@@ -721,6 +738,7 @@ function mlt_get_gallery_images(): array {
 			continue;
 		}
 		$img_url = get_the_post_thumbnail_url( $post->ID, 'large' ) ?: (string) get_post_meta( $post->ID, '_mlt_image_url', true );
+		$img_url = mlt_normalize_theme_asset_url( $img_url );
 		if ( ! $img_url ) {
 			continue;
 		}

@@ -108,17 +108,27 @@ jobs:
                       ftp.cwd(curr)
 
           uploaded = []
-          for rel_path in files:
-              remote_full = f"{base_dir}/{rel_path}"
-              remote_dir = posixpath.dirname(remote_full)
-              remote_filename = posixpath.basename(remote_full)
+          target_dirs = [base_dir]
+          prod_dir = "/menletstalk.co.ke/www/html"
+          if prod_dir not in target_dirs:
+              try:
+                  ftp.cwd(prod_dir)
+                  target_dirs.append(prod_dir)
+              except ftplib.error_perm:
+                  pass
 
-              ensure_remote_dir(remote_dir)
-              size_bytes = os.path.getsize(rel_path)
-              with open(rel_path, "rb") as lf:
-                  ftp.storbinary(f"STOR {remote_filename}", lf)
-              print(f"Uploaded: {rel_path} -> {remote_full} ({size_bytes} bytes)")
-              uploaded.append((rel_path, remote_full, size_bytes))
+          for t_dir in target_dirs:
+              for rel_path in files:
+                  remote_full = f"{t_dir}/{rel_path}"
+                  remote_dir = posixpath.dirname(remote_full)
+                  remote_filename = posixpath.basename(remote_full)
+
+                  ensure_remote_dir(remote_dir)
+                  size_bytes = os.path.getsize(rel_path)
+                  with open(rel_path, "rb") as lf:
+                      ftp.storbinary(f"STOR {remote_filename}", lf)
+                  print(f"Uploaded: {rel_path} -> {remote_full} ({size_bytes} bytes)")
+                  uploaded.append((rel_path, remote_full, size_bytes))
 
           ftp.quit()
           print(f"Successfully uploaded {len(uploaded)} file(s).")
