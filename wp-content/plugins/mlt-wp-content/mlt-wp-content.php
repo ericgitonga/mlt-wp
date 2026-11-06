@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Men Let's Talk Content & Setup
  * Description: Custom post types, taxonomies, Sanity migration importer, 7-layer anti-spam engine, JSON API endpoints, and one-click page setup for Men Let's Talk.
- * Version:     0.4.0
+ * Version:     0.4.1
  * Author:      Men Let's Talk
  * Text Domain: mlt-wp-content
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLT_WP_CONTENT_VERSION', '0.4.0' );
+define( 'MLT_WP_CONTENT_VERSION', '0.4.1' );
 define( 'MLT_WP_CONTENT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MLT_WP_CONTENT_URL', plugin_dir_url( __FILE__ ) );
 
