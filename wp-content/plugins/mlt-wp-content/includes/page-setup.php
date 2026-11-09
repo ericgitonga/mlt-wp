@@ -140,6 +140,7 @@ function mlt_seed_default_media_content(): void {
 			}
 			if ( $post_id > 0 ) {
 				update_post_meta( $post_id, '_mlt_sanity_id', $img['id'] );
+				update_post_meta( $post_id, '_mlt_gallery_album', $img['album'] ?? 'community-gatherings' );
 				update_post_meta( $post_id, '_mlt_gallery_caption', $img['caption'] );
 				update_post_meta( $post_id, '_mlt_image_url', $img['image_url'] );
 			}
@@ -286,10 +287,11 @@ function mlt_sync_production_docroot(): array {
 	$prod_docroot = $account_root . '/menletstalk.co.ke/www/html';
 
 	mlt_ensure_dynamic_host_wp_config( $src_root . '/wp-config.php', 'www.menletstalk.co.ke' );
+	mlt_seed_default_media_content();
 	$db_defaults = mlt_ensure_production_db_defaults( 'https://www.menletstalk.co.ke' );
 
 	if ( ! is_dir( $prod_docroot ) || realpath( $prod_docroot ) === realpath( $src_root ) ) {
-		update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION . '-r2' );
+		update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION . '-r3' );
 		return array(
 			'synced'      => false,
 			'files'       => 0,
@@ -300,7 +302,7 @@ function mlt_sync_production_docroot(): array {
 
 	$copied = is_file( $prod_docroot . '/wp-config.php' ) ? 0 : mlt_recursive_copy_dir( $src_root, $prod_docroot );
 	mlt_ensure_dynamic_host_wp_config( $prod_docroot . '/wp-config.php', 'www.menletstalk.co.ke' );
-	update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION . '-r2' );
+	update_option( 'mlt_prod_docroot_synced', MLT_WP_CONTENT_VERSION . '-r3' );
 
 	return array(
 		'synced'      => true,
@@ -311,7 +313,7 @@ function mlt_sync_production_docroot(): array {
 }
 
 function mlt_maybe_auto_sync_production_docroot(): void {
-	if ( get_option( 'mlt_prod_docroot_synced' ) === MLT_WP_CONTENT_VERSION . '-r2' ) {
+	if ( get_option( 'mlt_prod_docroot_synced' ) === MLT_WP_CONTENT_VERSION . '-r3' ) {
 		return;
 	}
 	mlt_sync_production_docroot();

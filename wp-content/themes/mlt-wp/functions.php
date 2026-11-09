@@ -23,13 +23,13 @@ function mlt_wp_enqueue_assets(): void {
 		'mlt-wp-main',
 		$theme_uri . '/assets/css/main.css',
 		array(),
-		'0.4.0'
+		'0.6.0'
 	);
 	wp_enqueue_script(
 		'mlt-wp-main',
 		$theme_uri . '/assets/js/main.js',
 		array(),
-		'0.4.0',
+		'0.6.0',
 		true
 	);
 }
@@ -287,6 +287,24 @@ function mlt_route_template_fallback( string $template ): string {
 		'privacy',
 		'search',
 	);
+
+	if ( 0 === strpos( $path, 'gallery/' ) ) {
+		$album_slug = trim( substr( $path, strlen( 'gallery/' ) ), '/' );
+		$albums     = function_exists( 'mlt_get_gallery_albums' ) ? mlt_get_gallery_albums() : array();
+		if ( '' !== $album_slug && isset( $albums[ $album_slug ] ) ) {
+			$candidate = get_template_directory() . '/page-gallery.php';
+			if ( file_exists( $candidate ) ) {
+				$GLOBALS['mlt_active_gallery_album'] = $album_slug;
+				global $wp_query;
+				if ( isset( $wp_query ) ) {
+					$wp_query->is_404  = false;
+					$wp_query->is_page = true;
+				}
+				status_header( 200 );
+				return $candidate;
+			}
+		}
+	}
 
 	if ( in_array( $path, $slugs, true ) ) {
 		$candidate = get_template_directory() . '/page-' . $path . '.php';

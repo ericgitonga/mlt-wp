@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Men Let's Talk Content & Setup
  * Description: Custom post types, taxonomies, Sanity migration importer, 7-layer anti-spam engine, JSON API endpoints, and one-click page setup for Men Let's Talk.
- * Version:     0.4.1
+ * Version:     0.6.0
  * Author:      Men Let's Talk
  * Text Domain: mlt-wp-content
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLT_WP_CONTENT_VERSION', '0.4.1' );
+define( 'MLT_WP_CONTENT_VERSION', '0.6.0' );
 define( 'MLT_WP_CONTENT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MLT_WP_CONTENT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -19,6 +19,7 @@ require_once MLT_WP_CONTENT_DIR . 'includes/anti-spam.php';
 require_once MLT_WP_CONTENT_DIR . 'includes/api-routes.php';
 require_once MLT_WP_CONTENT_DIR . 'includes/page-setup.php';
 require_once MLT_WP_CONTENT_DIR . 'includes/sanity-import.php';
+require_once MLT_WP_CONTENT_DIR . 'includes/admin-meta-boxes.php';
 
 /**
  * Contact channel constants matching src/lib/contactInfo.ts.
@@ -446,7 +447,7 @@ function mlt_get_default_events(): array {
 			'category'         => 'special-forums',
 			'description'      => "The Junction (All About Men) x Men Let's Talk x JimmiGathu Connects presents Men's Garage: What's Under the Hood? Real conversations. Beyond the surface. Tickets KES 1,000 (KES 500 redeemable). Men-only space till 6 PM; free arcade games, F&B offers & Man Utd vs Aston Villa at 19:30.",
 			'image_url'        => $events_base . 'mens-garage-flier.jpg',
-			'registrationOpen' => true,
+			'registrationOpen' => false,
 		),
 		array(
 			'id'               => 'event-son-and-father-dinner-2026-12-12',
@@ -464,18 +465,68 @@ function mlt_get_default_events(): array {
 }
 
 /**
+ * Gallery album definitions (mirrors GALLERY_ALBUMS in men-lets-talk).
+ *
+ * @return array<string, array{slug: string, title: string, description: string}>
+ */
+function mlt_get_gallery_albums(): array {
+	return array(
+		'mens-garage'          => array(
+			'slug'        => 'mens-garage',
+			'title'       => "Men's Garage",
+			'description' => "Moments from Men's Garage: What's Under the Hood? at Junction Mall.",
+		),
+		'community-gatherings' => array(
+			'slug'        => 'community-gatherings',
+			'title'       => 'Community Gatherings',
+			'description' => "Moments from Men Let's Talk conversation circles, breakfasts and brotherhood gatherings.",
+		),
+	);
+}
+
+/**
+ * Resolve which gallery album an item belongs to.
+ */
+function mlt_resolve_gallery_album( array $item ): string {
+	$album     = isset( $item['album'] ) ? (string) $item['album'] : '';
+	$id        = isset( $item['id'] ) ? (string) $item['id'] : '';
+	$image_url = isset( $item['image_url'] ) ? (string) $item['image_url'] : '';
+
+	if (
+		'mens-garage' === $album ||
+		0 === strpos( $id, 'gallery-mens-garage-' ) ||
+		false !== strpos( $image_url, '/mens-garage/' )
+	) {
+		return 'mens-garage';
+	}
+	return 'community-gatherings';
+}
+
+/**
  * Default bundled gallery photos (mirrors src/lib/defaultMedia.ts in men-lets-talk).
  */
 function mlt_get_default_gallery_images(): array {
 	$base_url = get_template_directory_uri() . '/assets/images/gallery/';
-	$nums     = array(
+	$out      = array();
+
+	for ( $i = 1; $i <= 64; $i++ ) {
+		$num   = str_pad( (string) $i, 2, '0', STR_PAD_LEFT );
+		$out[] = array(
+			'id'        => 'gallery-mens-garage-' . $num,
+			'album'     => 'mens-garage',
+			'image_url' => $base_url . 'mens-garage/mlt-mg_' . $num . '.jpg',
+			'caption'   => '',
+		);
+	}
+
+	$nums = array(
 		'01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '13',
 		'18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29',
 	);
-	$out      = array();
 	foreach ( $nums as $num ) {
 		$out[] = array(
 			'id'        => 'gallery-image-' . $num,
+			'album'     => 'community-gatherings',
 			'image_url' => $base_url . 'gallery-' . $num . '.jpg',
 			'caption'   => '',
 		);
@@ -536,6 +587,68 @@ function mlt_get_upcoming_events( int $limit = -1 ): array {
 	if ( $limit > 0 ) {
 		return array_slice( $events, 0, $limit );
 	}
+	return $events;
+}
+
+/**
+ * Query past events (date < now, ordered most-recent first).
+ */
+function mlt_get_past_events(): array {
+	$posts = get_posts(
+		array(
+			'post_type'      => 'mlt_event',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'orderby'        => 'meta_value',
+			'meta_key'       => '_mlt_event_date',
+			'order'          => 'DESC',
+		)
+	);
+
+	$now_ts   = time();
+	$seen_ids = array();
+	$events   = array();
+
+	foreach ( $posts as $post ) {
+		$date_str = (string) get_post_meta( $post->ID, '_mlt_event_date', true );
+		$date_ts  = $date_str ? strtotime( $date_str ) : false;
+		if ( false === $date_ts || $date_ts >= $now_ts ) {
+			continue;
+		}
+		$sanity_id          = (string) get_post_meta( $post->ID, '_mlt_sanity_id', true );
+		$id                 = $sanity_id ? $sanity_id : 'event-' . $post->ID;
+		$seen_ids[ $id ]    = true;
+		$img_url            = get_the_post_thumbnail_url( $post->ID, 'full' ) ?: (string) get_post_meta( $post->ID, '_mlt_image_url', true );
+		$img_url            = mlt_normalize_theme_asset_url( $img_url );
+		$events[]           = array(
+			'id'               => $id,
+			'wp_id'            => $post->ID,
+			'name'             => get_the_title( $post ),
+			'slug'             => $post->post_name,
+			'date'             => $date_str ?: $post->post_date,
+			'location'         => (string) get_post_meta( $post->ID, '_mlt_event_location', true ),
+			'category'         => (string) get_post_meta( $post->ID, '_mlt_event_category', true ),
+			'description'      => wp_strip_all_tags( $post->post_content ),
+			'image_url'        => $img_url,
+			'registrationOpen' => false,
+		);
+	}
+
+	foreach ( mlt_get_default_events() as $def_ev ) {
+		$def_ts = strtotime( $def_ev['date'] );
+		if ( false !== $def_ts && $def_ts < $now_ts && ! isset( $seen_ids[ $def_ev['id'] ] ) ) {
+			$def_ev['registrationOpen'] = false;
+			$events[]                   = $def_ev;
+		}
+	}
+
+	usort(
+		$events,
+		function ( array $a, array $b ): int {
+			return (int) strtotime( $b['date'] ) <=> (int) strtotime( $a['date'] );
+		}
+	);
+
 	return $events;
 }
 
@@ -716,9 +829,9 @@ function mlt_get_books(): array {
 }
 
 /**
- * Query gallery photos.
+ * Query gallery photos, optionally filtered by album slug.
  */
-function mlt_get_gallery_images(): array {
+function mlt_get_gallery_images( string $album = '' ): array {
 	$posts = get_posts(
 		array(
 			'post_type'      => 'mlt_gallery_image',
@@ -755,11 +868,15 @@ function mlt_get_gallery_images(): array {
 		}
 		$seen_ids[ $id ]       = true;
 		$seen_urls[ $img_url ] = true;
-		$images[]              = array(
+		$raw_album             = (string) get_post_meta( $post->ID, '_mlt_gallery_album', true );
+		$item                  = array(
 			'id'        => $id,
+			'album'     => $raw_album,
 			'image_url' => $img_url,
 			'caption'   => (string) get_post_meta( $post->ID, '_mlt_gallery_caption', true ),
 		);
+		$item['album']         = mlt_resolve_gallery_album( $item );
+		$images[]              = $item;
 	}
 
 	foreach ( mlt_get_default_gallery_images() as $default_img ) {
@@ -768,9 +885,21 @@ function mlt_get_gallery_images(): array {
 		if ( isset( $seen_ids[ $def_id ] ) || isset( $seen_urls[ $def_url ] ) ) {
 			continue;
 		}
-		$seen_ids[ $def_id ]   = true;
-		$seen_urls[ $def_url ] = true;
-		$images[]              = $default_img;
+		$seen_ids[ $def_id ]    = true;
+		$seen_urls[ $def_url ]  = true;
+		$default_img['album']   = mlt_resolve_gallery_album( $default_img );
+		$images[]               = $default_img;
+	}
+
+	if ( '' !== $album ) {
+		return array_values(
+			array_filter(
+				$images,
+				function ( array $img ) use ( $album ): bool {
+					return mlt_resolve_gallery_album( $img ) === $album;
+				}
+			)
+		);
 	}
 
 	return $images;
