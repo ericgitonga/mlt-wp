@@ -21,3 +21,9 @@ h1, h2, h3, h4, h5, h6, [data-testid="signature-statement"] {
 input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="search"], textarea {
   font-size: 16px;
 }
+.pt-12 {
+  padding-top: 3rem;
+}
+.group:hover .group-hover\:underline {
+  text-decoration: underline;
+}

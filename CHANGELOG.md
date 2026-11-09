@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0] - 2026-11-09
+- Organise `/gallery` (`page-gallery.php`, `functions.php`, `mlt-wp-content.php`) into album folder cards (`data-testid="gallery-albums"`) with breadcrumb drill-down navigation (`/gallery/mens-garage` with 64 event photographs `mlt-mg_01.jpg` … `mlt-mg_64.jpg`, and `/gallery/community-gatherings` with the 24 existing community photographs) and an Album/Folder selector in `wp-admin`.
+- Add `mlt_get_past_events()` and a **Past Events** section (`data-testid="past-events-section"`) on `/events` (`page-events.php`) below **Upcoming Events** so past events remain visible on site ordered most-recent first without an active registration form (closes #18).
+
+## [0.5.0] - 2026-11-07
+- Add WordPress Admin Meta Boxes, `Settings -> MLT Site Settings` (`mlt_site_settings`), Classic Editor layout for custom post types, and custom list-table columns in `includes/admin-meta-boxes.php` so all `_mlt_*` post meta fields across Events, Resources, Stories (including Kenya DPA 2019 publication consent), Community Groups, Partners, Books & Projects, Gallery Photos, Registrations, Subscribers, and Contact Enquiries can be managed directly in `wp-admin`.
+
 ## [0.4.1] - 2026-11-06
 - Add `mlt_ensure_production_db_defaults()` in `includes/page-setup.php` to update the raw `wp_options` (`siteurl` and `home`) and any stored `wp_postmeta` / `wp_posts` URLs to `https://www.menletstalk.co.ke`, and ensure `mlt_ensure_dynamic_host_wp_config()` updates existing fallback host strings to `www.menletstalk.co.ke` (closes #16).
 
