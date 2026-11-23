@@ -7,6 +7,7 @@ on:
     paths:
       - 'wp-content/**'
       - '.github/workflows/deploy-ftp.yml'
+      - '.github/certs/**'
   workflow_dispatch:
     inputs:
       sync_all:
@@ -91,9 +92,32 @@ jobs:
           base_dir = os.environ["FTP_SERVER_DIR"].rstrip("/")
 
           import ssl
+          import pathlib
+
           ssl_context = ssl.create_default_context()
+          cert_path = pathlib.Path(".github/certs/letsencrypt_geny_intermediates.pem")
+          if cert_path.is_file():
+              ssl_context.load_verify_locations(cafile=str(cert_path))
+
+          class VerifiedFTPTLS(ftplib.FTP_TLS):
+              def auth(self):
+                  if isinstance(self.sock, ssl.SSLSocket):
+                      return "234 Already TLS"
+                  resp = self.voidcmd("AUTH TLS")
+                  server_hostname = "angryhosting.com" if "angryhosting.com" not in self.host else self.host
+                  self.sock = self.context.wrap_socket(self.sock, server_hostname=server_hostname)
+                  self.file = self.sock.makefile(mode="r", encoding=self.encoding)
+                  return resp
+
+              def ntransfercmd(self, cmd, rest=None):
+                  conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
+                  if self._prot_p:
+                      server_hostname = "angryhosting.com" if "angryhosting.com" not in self.host else self.host
+                      conn = self.context.wrap_socket(conn, server_hostname=server_hostname)
+                  return conn, size
+
           print(f"Connecting to {host}:21 via explicit FTPS (with verified TLS context)...")
-          ftp = ftplib.FTP_TLS(context=ssl_context)
+          ftp = VerifiedFTPTLS(context=ssl_context)
           ftp.connect(host, 21, timeout=30)
           ftp.login(user, password)
           ftp.prot_p()
