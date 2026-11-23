@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0] - 2026-11-23
+- Enforce strict TLS certificate and hostname validation via ssl.create_default_context() in FTPS deployment workflow .github/workflows/deploy-ftp.yml (closes #21).
+- Remove unauthenticated web-initiated cutover and configuration copy from bootstrap in includes/page-setup.php and add concurrency lock (mlt_page_setup_acquire_lock()) (closes #22).
+- Set explicit method="post" across all public forms (page-contact.php, page-share-your-story.php, and functions.php) to prevent PII exposure in query strings (closes #23).
+- Filter REST API (rest_mlt_story_query) and public queries (pre_get_posts) to require publication consent (_mlt_consent_given === '1'), and demote unconsented stories on save in wp-admin (closes #24).
+- Restrict operational PII custom post types (mlt_registration, mlt_subscriber, mlt_submission) to dedicated management capabilities mapped exclusively to the administrator role in mlt-wp-content.php (closes #25).
+- Implement 7-layer abuse controls, honeypot checks, and client IP rate limiting across all public write API endpoints (/api/register, /api/subscribe, /api/share-story) in includes/api-routes.php (closes #26).
+- Make form single-use replay locks (mlt_acquire_replay_lock()) and rate limit enforcement (mlt_atomic_increment()) atomic via wp_options mutex with HMAC-SHA256 IP pseudonyms (closes #27).
+- Purge suppressed biker gallery photograph residuals (gallery-12.jpg, gallery-14.jpg, gallery-15.jpg, gallery-16.jpg, gallery-17.jpg) from theme media and preserve them in safe quarantine (closes #28).
+- Add Kenya DPA 2019 Section 33 adult/guardian consent confirmation (isAdult) and health/child data safeguards to story intake in page-share-your-story.php and api-routes.php (closes #29).
+- Align privacy policy notice with Kenya DPA 2019 statutory requirements (7-day access response, 14-day rectification/erasure, database retention disclosure) in page-privacy.php (closes #30).
+- Enforce manage_options capability requirement across Homepage and global site settings in includes/admin-meta-boxes.php (closes #31).
+- Add automated security unit test suite (tests/test_security.php, tests/run_security_tests.php) and CI gate in .github/workflows/php-lint.yml (closes #32).
+- Complete 2026-11-23 Codex Adversarial Audit & Kenya DPA 2019 remediations (closes #20).
+
 ## [0.6.0] - 2026-11-09
 - Organise `/gallery` (`page-gallery.php`, `functions.php`, `mlt-wp-content.php`) into album folder cards (`data-testid="gallery-albums"`) with breadcrumb drill-down navigation (`/gallery/mens-garage` with 64 event photographs `mlt-mg_01.jpg` … `mlt-mg_64.jpg`, and `/gallery/community-gatherings` with the 24 existing community photographs) and an Album/Folder selector in `wp-admin`.
 - Add `mlt_get_past_events()` and a **Past Events** section (`data-testid="past-events-section"`) on `/events` (`page-events.php`) below **Upcoming Events** so past events remain visible on site ordered most-recent first without an active registration form (closes #18).

@@ -312,13 +312,30 @@ function mlt_sync_production_docroot(): array {
 	);
 }
 
-function mlt_maybe_auto_sync_production_docroot(): void {
-	if ( get_option( 'mlt_prod_docroot_synced' ) === MLT_WP_CONTENT_VERSION . '-r3' ) {
-		return;
+/**
+ * Attempt to acquire an exclusive lock for running site setup/repair.
+ * Locks expire automatically after 120 seconds to prevent deadlocks.
+ */
+function mlt_page_setup_acquire_lock(): bool {
+	$lock_key = 'mlt_page_setup_lock';
+	$now      = time();
+	$timeout  = 120; // 2 minutes
+
+	$existing = get_option( $lock_key );
+	if ( $existing && ( $now - (int) $existing ) < $timeout ) {
+		return false;
 	}
-	mlt_sync_production_docroot();
+
+	update_option( $lock_key, $now );
+	return true;
 }
-add_action( 'init', 'mlt_maybe_auto_sync_production_docroot', 0 );
+
+/**
+ * Release the page setup lock.
+ */
+function mlt_page_setup_release_lock(): void {
+	delete_option( 'mlt_page_setup_lock' );
+}
 
 function mlt_register_admin_menus(): void {
 	add_management_page(

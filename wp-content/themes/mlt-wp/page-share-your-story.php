@@ -28,7 +28,21 @@ get_header();
 		your consent.
 	</p>
 
-	<form data-testid="share-story-form" class="mt-8 space-y-6">
+	<form method="post" data-testid="share-story-form" class="mt-8 space-y-6">
+		<div
+			aria-hidden="true"
+			class="pointer-events-none absolute -left-[9999px] top-auto h-px w-px overflow-hidden opacity-0"
+		>
+			<label for="share-story-website">Website</label>
+			<input
+				id="share-story-website"
+				name="website"
+				type="text"
+				value=""
+				tabindex="-1"
+				autocomplete="nope"
+			/>
+		</div>
 		<div>
 			<label for="name" class="block text-sm font-medium">
 				Name (optional — leave blank to stay anonymous)
@@ -93,6 +107,13 @@ get_header();
 				Every story is reviewed by our team before it&apos;s published — it won&apos;t appear on
 				the site right away.
 			</p>
+			<label class="flex items-start gap-2">
+				<input type="checkbox" name="isAdult" required class="mt-1" />
+				<span>
+					I confirm that I am 18 years or older, or I have express parental or legal guardian
+					consent to share this testimony under Kenya&apos;s Data Protection Act, 2019 (Section 33).
+				</span>
+			</label>
 			<label class="flex items-start gap-2">
 				<input type="checkbox" name="processingConsentGiven" required class="mt-1" />
 				<span>

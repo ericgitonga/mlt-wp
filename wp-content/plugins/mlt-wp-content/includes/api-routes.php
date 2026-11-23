@@ -97,9 +97,19 @@ function mlt_handle_api_requests(): void {
 add_action( 'init', 'mlt_handle_api_requests', 1 );
 
 function mlt_handle_api_register(): void {
+	$client_ip = mlt_get_client_ip();
+	if ( mlt_is_rate_limited( $client_ip ) ) {
+		mlt_send_json( array( 'error' => 'Too many requests. Please try again later.' ), 429 );
+	}
+
 	$body = mlt_read_json_body();
 	if ( null === $body ) {
 		mlt_send_json( array( 'error' => 'Invalid request body.' ), 400 );
+	}
+
+	$website = $body['website'] ?? null;
+	if ( is_string( $website ) && '' !== trim( $website ) ) {
+		mlt_send_json( array( 'ok' => true ), 200 );
 	}
 
 	$event_id      = $body['eventId'] ?? null;
@@ -156,9 +166,19 @@ function mlt_handle_api_register(): void {
 }
 
 function mlt_handle_api_subscribe(): void {
+	$client_ip = mlt_get_client_ip();
+	if ( mlt_is_rate_limited( $client_ip ) ) {
+		mlt_send_json( array( 'error' => 'Too many requests. Please try again later.' ), 429 );
+	}
+
 	$body = mlt_read_json_body();
 	if ( null === $body ) {
 		mlt_send_json( array( 'error' => 'Invalid request body.' ), 400 );
+	}
+
+	$website = $body['website'] ?? null;
+	if ( is_string( $website ) && '' !== trim( $website ) ) {
+		mlt_send_json( array( 'ok' => true ), 200 );
 	}
 
 	$email           = $body['email'] ?? null;
@@ -211,9 +231,19 @@ function mlt_handle_api_subscribe(): void {
 }
 
 function mlt_handle_api_share_story(): void {
+	$client_ip = mlt_get_client_ip();
+	if ( mlt_is_rate_limited( $client_ip ) ) {
+		mlt_send_json( array( 'error' => 'Too many requests. Please try again later.' ), 429 );
+	}
+
 	$body = mlt_read_json_body();
 	if ( null === $body ) {
 		mlt_send_json( array( 'error' => 'Invalid request body.' ), 400 );
+	}
+
+	$website = $body['website'] ?? null;
+	if ( is_string( $website ) && '' !== trim( $website ) ) {
+		mlt_send_json( array( 'ok' => true ), 200 );
 	}
 
 	$name                     = $body['name'] ?? null;
@@ -221,6 +251,7 @@ function mlt_handle_api_share_story(): void {
 	$topics                   = $body['topics'] ?? null;
 	$story_text               = $body['storyText'] ?? null;
 	$video_url                = $body['videoUrl'] ?? null;
+	$is_adult                 = $body['isAdult'] ?? null;
 	$processing_consent_given = $body['processingConsentGiven'] ?? null;
 	$consent_given            = $body['consentGiven'] ?? null;
 	$valid_topics             = array_keys( mlt_get_topic_labels() );
@@ -253,8 +284,19 @@ function mlt_handle_api_share_story(): void {
 	if ( ! $has_story_text && ! $has_video_url ) {
 		mlt_send_json( array( 'error' => 'Share your story as text or a video link.' ), 400 );
 	}
+	if ( true !== $is_adult ) {
+		mlt_send_json( array( 'error' => 'Confirmation of age (18+) or parental/guardian consent is required.' ), 400 );
+	}
 	if ( true !== $processing_consent_given || true !== $consent_given ) {
 		mlt_send_json( array( 'error' => 'Both consent checkboxes are required.' ), 400 );
+	}
+
+	if ( mlt_is_spam_submission( array(
+		'name'    => is_string( $name ) ? $name : '',
+		'topic'   => is_array( $topics ) ? implode( ' ', $topics ) : '',
+		'message' => is_string( $story_text ) ? $story_text : '',
+	) ) ) {
+		mlt_send_json( array( 'ok' => true ), 200 );
 	}
 
 	if ( ! mlt_are_public_writes_configured() ) {
@@ -289,6 +331,7 @@ function mlt_handle_api_share_story(): void {
 	update_post_meta( $post_id, '_mlt_processing_consent_given', '1' );
 	update_post_meta( $post_id, '_mlt_consent_version', '2026-04-17' );
 	update_post_meta( $post_id, '_mlt_consented_at', $now );
+	update_post_meta( $post_id, '_mlt_is_adult', '1' );
 
 	mlt_send_json( array( 'ok' => true ), 200 );
 }

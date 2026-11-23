@@ -68,13 +68,73 @@ function mlt_verify_challenge_and_interaction( array $input, ?int $now_ms = null
 		return false;
 	}
 
-	$replay_key = 'mlt_rpl_' . md5( $sig );
-	if ( get_transient( $replay_key ) ) {
+	if ( ! mlt_acquire_replay_lock( $sig ) ) {
 		return false;
 	}
-	set_transient( $replay_key, 1, 2 * HOUR_IN_SECONDS );
 
 	return true;
+}
+
+/**
+ * Atomically reserve a single-use signature replay lock via WordPress options.
+ * Returns true if the lock was acquired, false if replayed.
+ */
+function mlt_acquire_replay_lock( string $sig ): bool {
+	$replay_key       = 'mlt_rpl_' . substr( hash_hmac( 'sha256', $sig, mlt_get_contact_secret() ), 0, 24 );
+	$transient_option = '_transient_' . $replay_key;
+	$timeout_option   = '_transient_timeout_' . $replay_key;
+	$expires_at       = time() + ( 2 * HOUR_IN_SECONDS );
+
+	// add_option() fails (returns false) if the option already exists (atomic check-and-set).
+	if ( ! add_option( $transient_option, 1, '', 'no' ) ) {
+		return false;
+	}
+	add_option( $timeout_option, $expires_at, '', 'no' );
+	return true;
+}
+
+/**
+ * Atomically increment a transient counter using SQL queries against wp_options.
+ * Returns true if count <= limit, false if limit exceeded.
+ */
+function mlt_atomic_increment( string $key, int $expiration_seconds, int $limit ): bool {
+	global $wpdb;
+	$transient_option = '_transient_' . $key;
+	$timeout_option   = '_transient_timeout_' . $key;
+	$now              = time();
+	$expires_at       = $now + $expiration_seconds;
+
+	if ( add_option( $transient_option, 1, '', 'no' ) ) {
+		add_option( $timeout_option, $expires_at, '', 'no' );
+		return 1 <= $limit;
+	}
+
+	$timeout = (int) get_option( $timeout_option );
+	if ( $timeout && $timeout < $now ) {
+		update_option( $transient_option, 1, 'no' );
+		update_option( $timeout_option, $expires_at, 'no' );
+		return 1 <= $limit;
+	}
+
+	if ( isset( $wpdb ) && method_exists( $wpdb, 'query' ) && isset( $wpdb->options ) ) {
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$wpdb->options} SET option_value = option_value + 1 WHERE option_name = %s",
+				$transient_option
+			)
+		);
+		$current = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",
+				$transient_option
+			)
+		);
+	} else {
+		$current = (int) get_option( $transient_option, 1 ) + 1;
+		update_option( $transient_option, $current, 'no' );
+	}
+
+	return $current <= $limit;
 }
 
 function mlt_count_urls( string $value ): int {
@@ -175,24 +235,14 @@ function mlt_is_spam_submission( array $fields ): bool {
 }
 
 function mlt_is_rate_limited( string $ip ): bool {
-	$ip_key      = md5( trim( $ip ) ?: '0.0.0.0' );
-	$ip_15m_key  = 'mlt_rl_15m_' . $ip_key;
-	$ip_24h_key  = 'mlt_rl_24h_' . $ip_key;
-	$global_key  = 'mlt_rl_global_1h';
+	$ip_clean = filter_var( trim( $ip ), FILTER_VALIDATE_IP ) ? trim( $ip ) : '0.0.0.0';
+	$ip_hash  = substr( hash_hmac( 'sha256', $ip_clean, mlt_get_contact_secret() ), 0, 16 );
 
-	$count_15m    = (int) get_transient( $ip_15m_key );
-	$count_24h    = (int) get_transient( $ip_24h_key );
-	$count_global = (int) get_transient( $global_key );
+	$ok_15m  = mlt_atomic_increment( 'mlt_rl_15m_' . $ip_hash, 15 * MINUTE_IN_SECONDS, 2 );
+	$ok_24h  = mlt_atomic_increment( 'mlt_rl_24h_' . $ip_hash, DAY_IN_SECONDS, 5 );
+	$ok_glob = mlt_atomic_increment( 'mlt_rl_glob_1h', HOUR_IN_SECONDS, 15 );
 
-	if ( $count_15m >= 2 || $count_24h >= 5 || $count_global >= 15 ) {
-		return true;
-	}
-
-	set_transient( $ip_15m_key, $count_15m + 1, 15 * MINUTE_IN_SECONDS );
-	set_transient( $ip_24h_key, $count_24h + 1, DAY_IN_SECONDS );
-	set_transient( $global_key, $count_global + 1, HOUR_IN_SECONDS );
-
-	return false;
+	return ( ! $ok_15m || ! $ok_24h || ! $ok_glob );
 }
 
 function mlt_sanitize_reply_to_name( string $name ): string {

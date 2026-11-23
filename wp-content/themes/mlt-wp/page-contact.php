@@ -46,7 +46,7 @@ get_header();
 		</p>
 	</div>
 
-	<form data-testid="contact-form" class="mt-8 space-y-4">
+	<form method="post" data-testid="contact-form" class="mt-8 space-y-4">
 		<div
 			aria-hidden="true"
 			class="pointer-events-none absolute -left-[9999px] top-auto h-px w-px overflow-hidden opacity-0"
