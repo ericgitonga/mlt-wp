@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.7.1] - 2026-11-23
+- Supply Let's Encrypt Gen-Y intermediate CA bundle (.github/certs/letsencrypt_geny_intermediates.pem) and effective TLS servername in .github/workflows/deploy-ftp.yml so FTPS certificate chain validation succeeds across GitHub Actions runners (closes #34).
+
 ## [0.7.0] - 2026-11-23
 - Enforce strict TLS certificate and hostname validation via ssl.create_default_context() in FTPS deployment workflow .github/workflows/deploy-ftp.yml (closes #21).
 - Remove unauthenticated web-initiated cutover and configuration copy from bootstrap in includes/page-setup.php and add concurrency lock (mlt_page_setup_acquire_lock()) (closes #22).
