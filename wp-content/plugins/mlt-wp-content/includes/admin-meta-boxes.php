@@ -275,6 +275,10 @@ function mlt_render_site_settings_fields(): void {
 }
 
 function mlt_render_site_settings_meta_box( WP_Post $post ): void {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		echo '<p class="description">Global Homepage and Site Settings can only be edited by site administrators.</p>';
+		return;
+	}
 	mlt_render_site_settings_fields();
 }
 
@@ -282,6 +286,9 @@ function mlt_render_site_settings_meta_box( WP_Post $post ): void {
  * Sanitize and persist `mlt_site_settings` array from POST payload.
  */
 function mlt_save_site_settings_from_request( array $raw ): void {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
 	$defaults     = mlt_get_default_site_settings();
 	$valid_topics = array_keys( mlt_get_topic_labels() );
 
@@ -539,6 +546,8 @@ function mlt_render_story_meta_box( WP_Post $post ): void {
 	$video_url        = (string) get_post_meta( $post->ID, '_mlt_video_url', true );
 	$consent_meta     = get_post_meta( $post->ID, '_mlt_consent_given', true );
 	$consent_given    = ( '' === $consent_meta ) ? true : ( '1' === (string) $consent_meta || true === $consent_meta );
+	$is_adult_meta    = get_post_meta( $post->ID, '_mlt_is_adult', true );
+	$is_adult         = ( '1' === (string) $is_adult_meta || true === $is_adult_meta );
 	$proc_meta        = get_post_meta( $post->ID, '_mlt_processing_consent_given', true );
 	$proc_consent     = ( '' === $proc_meta ) ? true : ( '1' === (string) $proc_meta || true === $proc_meta );
 	$consent_version  = (string) get_post_meta( $post->ID, '_mlt_consent_version', true ) ?: '2026-04-17';
@@ -586,6 +595,12 @@ function mlt_render_story_meta_box( WP_Post $post ): void {
 					<label for="mlt_story_consent_given">
 						<input type="checkbox" id="mlt_story_consent_given" name="mlt_consent_given" value="1" <?php checked( $consent_given ); ?> />
 						<strong>Publication Consent Confirmed</strong> — Author explicitly consented to publish this story on Men Let's Talk.
+					</label>
+				</p>
+				<p style="margin-top:6px;">
+					<label for="mlt_story_is_adult">
+						<input type="checkbox" id="mlt_story_is_adult" name="mlt_is_adult" value="1" <?php checked( $is_adult ); ?> />
+						<strong>Adult / Guardian Consent Confirmed (Section 33)</strong> — Author confirmed they are 18+ or have parent/guardian consent.
 					</label>
 				</p>
 				<p style="margin-top:6px;">
@@ -833,9 +848,10 @@ function mlt_save_admin_meta_boxes( int $post_id, WP_Post $post ): void {
 		return;
 	}
 
-	// Save Homepage Site Settings when editing the Home page.
+	// Save Homepage Site Settings when editing the Home page (restricted to administrators).
 	if (
 		'page' === $post->post_type &&
+		current_user_can( 'manage_options' ) &&
 		isset( $_POST['mlt_site_settings_nonce'], $_POST['mlt_site_settings'] ) &&
 		wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mlt_site_settings_nonce'] ) ), 'mlt_save_site_settings' ) &&
 		is_array( $_POST['mlt_site_settings'] )
@@ -937,8 +953,21 @@ function mlt_save_admin_meta_boxes( int $post_id, WP_Post $post ): void {
 
 		$consent_given = isset( $_POST['mlt_consent_given'] ) ? '1' : '0';
 		$proc_consent  = isset( $_POST['mlt_processing_consent_given'] ) ? '1' : '0';
+		$is_adult      = isset( $_POST['mlt_is_adult'] ) ? '1' : '0';
 		update_post_meta( $post_id, '_mlt_consent_given', $consent_given );
 		update_post_meta( $post_id, '_mlt_processing_consent_given', $proc_consent );
+		update_post_meta( $post_id, '_mlt_is_adult', $is_adult );
+
+		if ( '1' !== $consent_given && 'publish' === get_post_status( $post_id ) ) {
+			remove_action( 'save_post', 'mlt_save_admin_meta_boxes', 10 );
+			wp_update_post(
+				array(
+					'ID'          => $post_id,
+					'post_status' => 'pending',
+				)
+			);
+			add_action( 'save_post', 'mlt_save_admin_meta_boxes', 10, 2 );
+		}
 
 		if ( ! get_post_meta( $post_id, '_mlt_consent_version', true ) ) {
 			update_post_meta( $post_id, '_mlt_consent_version', '2026-04-17' );

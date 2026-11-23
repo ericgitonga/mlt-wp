@@ -90,8 +90,10 @@ jobs:
           password = os.environ["FTP_PASSWORD"]
           base_dir = os.environ["FTP_SERVER_DIR"].rstrip("/")
 
-          print(f"Connecting to {host}:21 via explicit FTPS...")
-          ftp = ftplib.FTP_TLS()
+          import ssl
+          ssl_context = ssl.create_default_context()
+          print(f"Connecting to {host}:21 via explicit FTPS (with verified TLS context)...")
+          ftp = ftplib.FTP_TLS(context=ssl_context)
           ftp.connect(host, 21, timeout=30)
           ftp.login(user, password)
           ftp.prot_p()

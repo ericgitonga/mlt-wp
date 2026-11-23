@@ -48,7 +48,8 @@ get_header();
 		<ul class="mt-3 list-disc space-y-3 pl-5 text-neutral-700">
 			<li>
 				<strong>Contact enquiries</strong> — your name, email, phone (optional), topic, and
-				message, sent directly to our team&apos;s email inbox so we can reply to you.
+				message, stored securely in our website database for operational follow-up and delivered
+				to our team&apos;s email inbox so we can reply to you.
 			</li>
 			<li>
 				<strong>Event registration</strong> — your name, email, and phone (optional), so we
@@ -93,8 +94,11 @@ get_header();
 		<p class="mt-3 text-neutral-700">
 			You can ask us to access, correct, or delete the information we hold about you at any
 			time by
-			<a href="<?php echo esc_url( $contact['whatsapp_url'] ); ?>" class="underline">messaging us on WhatsApp</a>.
-			We&apos;ll respond within 14 days.
+			<a href="<?php echo esc_url( $contact['whatsapp_url'] ); ?>" class="underline">messaging us on WhatsApp</a>
+			or emailing <a href="<?php echo esc_url( $contact['email_url'] ); ?>" class="underline"><?php echo esc_html( $contact['email'] ); ?></a>.
+			Under Kenya&apos;s Data Protection Act, 2019 and Data Protection (General) Regulations, 2021,
+			we will comply with your access request within 7 days, and complete any requested rectification
+			or erasure within 14 days.
 		</p>
 	</section>
 </main>

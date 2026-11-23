@@ -205,6 +205,8 @@
           topics: topics,
           storyText: fd.get("storyText") || undefined,
           videoUrl: fd.get("videoUrl") || undefined,
+          website: fd.get("website") || undefined,
+          isAdult: fd.get("isAdult") === "on",
           processingConsentGiven: fd.get("processingConsentGiven") === "on",
           consentGiven: fd.get("consentGiven") === "on",
         }),

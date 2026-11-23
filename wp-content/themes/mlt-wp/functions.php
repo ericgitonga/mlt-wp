@@ -23,13 +23,13 @@ function mlt_wp_enqueue_assets(): void {
 		'mlt-wp-main',
 		$theme_uri . '/assets/css/main.css',
 		array(),
-		'0.6.0'
+		'0.7.0'
 	);
 	wp_enqueue_script(
 		'mlt-wp-main',
 		$theme_uri . '/assets/js/main.js',
 		array(),
-		'0.6.0',
+		'0.7.0',
 		true
 	);
 }
@@ -166,7 +166,7 @@ function mlt_render_register_form( string $event_id, string $event_name ): void 
 			class="mlt-register-open-btn mt-4 inline-block rounded-md bg-neutral-900 px-5 py-2 text-white"
 		>Register</button>
 
-		<form data-testid="register-form" class="mlt-register-form mt-4 space-y-3" style="display:none;">
+		<form method="post" data-testid="register-form" class="mlt-register-form mt-4 space-y-3" style="display:none;">
 			<input
 				name="name"
 				type="text"
@@ -221,7 +221,7 @@ function mlt_render_subscribe_form(): void {
 	);
 	?>
 	<div class="mlt-subscribe-widget">
-		<form data-testid="subscribe-form" class="mlt-subscribe-form space-y-3">
+		<form method="post" data-testid="subscribe-form" class="mlt-subscribe-form space-y-3">
 			<input
 				name="email"
 				type="email"

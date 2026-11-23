@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Men Let's Talk Content & Setup
  * Description: Custom post types, taxonomies, Sanity migration importer, 7-layer anti-spam engine, JSON API endpoints, and one-click page setup for Men Let's Talk.
- * Version:     0.6.0
+ * Version:     0.7.0
  * Author:      Men Let's Talk
  * Text Domain: mlt-wp-content
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLT_WP_CONTENT_VERSION', '0.6.0' );
+define( 'MLT_WP_CONTENT_VERSION', '0.7.0' );
 define( 'MLT_WP_CONTENT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MLT_WP_CONTENT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -218,45 +218,51 @@ function mlt_register_content_types(): void {
 	register_post_type(
 		'mlt_registration',
 		array(
-			'labels'       => array(
+			'labels'          => array(
 				'name'          => 'Registrations',
 				'singular_name' => 'Registration',
 			),
-			'public'       => false,
-			'show_ui'      => true,
-			'show_in_menu' => true,
-			'menu_icon'    => 'dashicons-tickets-alt',
-			'supports'     => array( 'title', 'custom-fields' ),
+			'public'          => false,
+			'show_ui'         => true,
+			'show_in_menu'    => true,
+			'capability_type' => array( 'mlt_registration', 'mlt_registrations' ),
+			'map_meta_cap'    => true,
+			'menu_icon'       => 'dashicons-tickets-alt',
+			'supports'        => array( 'title', 'custom-fields' ),
 		)
 	);
 
 	register_post_type(
 		'mlt_subscriber',
 		array(
-			'labels'       => array(
+			'labels'          => array(
 				'name'          => 'Subscribers',
 				'singular_name' => 'Subscriber',
 			),
-			'public'       => false,
-			'show_ui'      => true,
-			'show_in_menu' => true,
-			'menu_icon'    => 'dashicons-email-alt',
-			'supports'     => array( 'title', 'custom-fields' ),
+			'public'          => false,
+			'show_ui'         => true,
+			'show_in_menu'    => true,
+			'capability_type' => array( 'mlt_subscriber', 'mlt_subscribers' ),
+			'map_meta_cap'    => true,
+			'menu_icon'       => 'dashicons-email-alt',
+			'supports'        => array( 'title', 'custom-fields' ),
 		)
 	);
 
 	register_post_type(
 		'mlt_submission',
 		array(
-			'labels'       => array(
+			'labels'          => array(
 				'name'          => 'Contact Enquiries',
 				'singular_name' => 'Contact Enquiry',
 			),
-			'public'       => false,
-			'show_ui'      => true,
-			'show_in_menu' => true,
-			'menu_icon'    => 'dashicons-email',
-			'supports'     => array( 'title', 'editor', 'custom-fields' ),
+			'public'          => false,
+			'show_ui'         => true,
+			'show_in_menu'    => true,
+			'capability_type' => array( 'mlt_submission', 'mlt_submissions' ),
+			'map_meta_cap'    => true,
+			'menu_icon'       => 'dashicons-email',
+			'supports'        => array( 'title', 'editor', 'custom-fields' ),
 		)
 	);
 
@@ -735,6 +741,73 @@ function mlt_get_stories( int $limit = -1 ): array {
 
 	return $stories;
 }
+
+/**
+ * Filter REST API and public front-end queries for mlt_story to guarantee
+ * that unconsented stories (_mlt_consent_given != '1') are never exposed.
+ */
+function mlt_filter_rest_story_query( array $args, WP_REST_Request $request ): array {
+	if ( ! current_user_can( 'edit_posts' ) ) {
+		$meta_query   = $args['meta_query'] ?? array();
+		$meta_query[] = array(
+			'key'   => '_mlt_consent_given',
+			'value' => '1',
+		);
+		$args['meta_query'] = $meta_query;
+	}
+	return $args;
+}
+add_filter( 'rest_mlt_story_query', 'mlt_filter_rest_story_query', 10, 2 );
+
+function mlt_filter_public_story_queries( WP_Query $query ): void {
+	if ( is_admin() || ! $query->is_main_query() ) {
+		return;
+	}
+	if ( 'mlt_story' === $query->get( 'post_type' ) ) {
+		$meta_query   = (array) ( $query->get( 'meta_query' ) ?: array() );
+		$meta_query[] = array(
+			'key'   => '_mlt_consent_given',
+			'value' => '1',
+		);
+		$query->set( 'meta_query', $meta_query );
+	}
+}
+add_action( 'pre_get_posts', 'mlt_filter_public_story_queries' );
+
+/**
+ * Map dedicated operational PII post type capabilities to the Administrator role,
+ * preventing standard Editors or Authors from accessing sensitive personal registrations,
+ * subscriber emails, or contact form submissions.
+ */
+function mlt_map_operational_capabilities(): void {
+	$role = get_role( 'administrator' );
+	if ( ! $role ) {
+		return;
+	}
+	$cpts = array(
+		'mlt_registration' => array( 'mlt_registration', 'mlt_registrations' ),
+		'mlt_subscriber'   => array( 'mlt_subscriber', 'mlt_subscribers' ),
+		'mlt_submission'   => array( 'mlt_submission', 'mlt_submissions' ),
+	);
+	foreach ( $cpts as $caps ) {
+		$singular = $caps[0];
+		$plural   = $caps[1];
+		$role->add_cap( "read_{$singular}" );
+		$role->add_cap( "edit_{$singular}" );
+		$role->add_cap( "delete_{$singular}" );
+		$role->add_cap( "edit_{$plural}" );
+		$role->add_cap( "edit_others_{$plural}" );
+		$role->add_cap( "publish_{$plural}" );
+		$role->add_cap( "read_private_{$plural}" );
+		$role->add_cap( "delete_{$plural}" );
+		$role->add_cap( "delete_private_{$plural}" );
+		$role->add_cap( "delete_published_{$plural}" );
+		$role->add_cap( "delete_others_{$plural}" );
+		$role->add_cap( "edit_private_{$plural}" );
+		$role->add_cap( "edit_published_{$plural}" );
+	}
+}
+add_action( 'admin_init', 'mlt_map_operational_capabilities' );
 
 /**
  * Query community groups.
